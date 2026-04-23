@@ -2,8 +2,10 @@ import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { NAV_ITEMS } from "../constants/nav"
 import { COLORS } from "../constants/theme"
+import { useAuth } from "../context/AuthContext"
+import { gqlFetch } from "../api"
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// Sub-components 
 
 function Logo() {
   return (
@@ -44,9 +46,14 @@ function ActiveMatchesBadge({ count }) {
   )
 }
 
-function FindMatchButton() {
+const FIND_MATCH = `mutation { findMatch { id status } }`
+const LEAVE_QUEUE = `mutation { leaveQueue }`
+
+function FindMatchButton({ onNavigate }) {
   const [finding, setFinding] = useState(false)
   const [dots, setDots] = useState("")
+  const [activeMatchId, setActiveMatchId] = useState(null)
+  const { user } = useAuth()
 
   useEffect(() => {
     if (!finding) {
@@ -57,23 +64,65 @@ function FindMatchButton() {
     return () => clearInterval(i)
   }, [finding])
 
+  useEffect(() => {
+    if (!finding) return
+    const interval = setInterval(async () => {
+      try {
+        const data = await gqlFetch(FIND_MATCH)
+        if (data.findMatch.status === 'IN_PROGRESS' && data.findMatch.id !== '-1') {
+          setFinding(false)
+          setActiveMatchId(data.findMatch.id)
+          clearInterval(interval)
+          onNavigate(`/match/${data.findMatch.id}`)
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [finding])
+
+  // if user quits the app
+  useEffect(() => {
+    return () => {
+      if (finding) gqlFetch(LEAVE_QUEUE).catch(console.error)
+    }
+  }, [finding])
+
+  function handleClick() {
+    if (activeMatchId) { onNavigate(`/match/${activeMatchId}`); return }
+    if (!user) { onNavigate('/auth'); return }
+    if (finding) {
+      gqlFetch(LEAVE_QUEUE).catch(console.error)
+      setFinding(false)
+      return
+    }
+    setFinding(true)
+  }
+
+  console.log(activeMatchId, finding)
+
   return (
     <div style={{ padding: "8px 16px 16px", borderBottom: `1px solid ${COLORS.borderFaint}` }}>
       <button
         onClick={() => setFinding(f => !f)}
         style={{
           width: "100%", padding: "12px",
-          background: finding
+          background: (finding || activeMatchId)
             ? `linear-gradient(135deg, ${COLORS.pinkDim}, rgba(176,106,255,0.2))`
             : `linear-gradient(135deg, ${COLORS.pink}, #c0196e)`,
-          border: finding ? `1px solid rgba(255,60,157,0.5)` : "none",
+          border: (finding || activeMatchId) ? `1px solid rgba(255,60,157,0.5)` : "none",
           borderRadius: "12px", color: "white", fontWeight: 700,
           fontSize: "14px", cursor: "pointer", letterSpacing: "0.5px",
-          boxShadow: finding ? "none" : `0 4px 20px ${COLORS.pinkGlow}`,
+          boxShadow: (finding || activeMatchId) ? "none" : `0 4px 20px ${COLORS.pinkGlow}`,
           transition: "all 0.3s",
         }}
       >
-        {finding ? `Finding match${dots}` : "⚡ Find Match"}
+        {activeMatchId ?
+          "⚡ Active Match"
+        : finding ?
+          `Finding match${dots}`
+        : "⚡ Find Match"}
       </button>
     </div>
   )
@@ -126,11 +175,12 @@ function SignIn({ onNavigate }) {
   )
 }
 
-// ── Navbar ────────────────────────────────────────────────────────────────────
+// Navbar
 
 export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuth()
 
   const activePage = location.pathname
 
@@ -146,9 +196,9 @@ export default function Navbar() {
     }}>
       <Logo />
       <ActiveMatchesBadge count={7} />
-      <FindMatchButton />
+      <FindMatchButton onNavigate={navigate} />
       <NavLinks activePage={activePage} onNavigate={navigate} />
-      <SignIn onNavigate={navigate} />
+      {!user && <SignIn onNavigate={navigate} />}
     </nav>
   )
 }

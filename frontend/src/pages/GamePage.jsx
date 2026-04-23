@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import GameCanvas from "./GameCanvas";
-import Scoreboard from "./Scoreboard";
+import GameCanvas from "../components/GameCanvas";
+import Scoreboard from "../components/Scoreboard";
 
-export default function Game() {
+export default function GamePage() {
     const [score, setScore]  = useState([0, 0])
     const [timer, setTimer] = useState(0)
 

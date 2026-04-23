@@ -42,8 +42,8 @@ const GameContainer = ({game_width, game_height, setScore}) => {
     let platforms
 
     function preload() {
-      this.load.image("bg", "assets/game_bg.png")
-      this.load.spritesheet("biker", "assets/biker.png", {
+      this.load.image("bg", "/assets/game_bg.png")
+      this.load.spritesheet("biker", "/assets/biker.png", {
         frameWidth: 48,
         frameHeight: 48
       })

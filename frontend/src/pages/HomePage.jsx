@@ -1,8 +1,6 @@
-import Game from "../components/Game"
-
 export default function HomePage() {
 
   return (
-    <Game/>
+    <div>Home page</div>
   )
 }

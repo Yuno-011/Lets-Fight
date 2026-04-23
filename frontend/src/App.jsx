@@ -1,8 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom"
-import Navbar          from "./Components/Navbar"
-import HomePage        from "./pages/HomePage"
+import Navbar from "./Components/Navbar"
+import HomePage from "./pages/HomePage"
+import AuthPage from "./pages/AuthPage"
+import GamePage from "./pages/GamePage"
 import PlaceholderPage from "./pages/PlaceholderPage"
-import { FONTS }       from "./constants/theme"
+import { FONTS } from "./constants/theme"
+import { GuestRoute, ProtectedRoute } from "./guards/ProtectedRoute"
+import ProfilePage from "./pages/ProfilePage"
 
 export default function App() {
   return (
@@ -21,11 +25,13 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/home" element={<HomePage />} />
+          <Route path="/match/:id" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
           <Route path="/rankings" element={<PlaceholderPage page="rankings" />} />
           <Route path="/stats" element={<PlaceholderPage page="stats" />} />
           <Route path="/about" element={<PlaceholderPage page="about" />} />
-          <Route path="/profile" element={<PlaceholderPage page="profile" />} />
-          <Route path="/auth" element={<PlaceholderPage page="auth" />} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/auth" element={<GuestRoute><AuthPage /></GuestRoute>} />
+          <Route path="/user/:username" element={<PlaceholderPage page="user" />} />
         </Routes>
       </main>
     </div>

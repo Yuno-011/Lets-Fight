@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { COLORS } from "../constants/theme"
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+//  Sub-components 
 
 function PlayerCard({ name, flag, rank, color, avatar }) {
   return (
@@ -65,7 +65,7 @@ function MatchStatus({ status, timer }) {
   )
 }
 
-// ── Scoreboard ────────────────────────────────────────────────────────────────
+//  Scoreboard 
 
 export default function Scoreboard({ score, timer }) {
   return (
