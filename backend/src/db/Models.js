@@ -16,7 +16,6 @@ const matchSchema = new mongoose.Schema({
   player_two:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   score_one:   { type: Number, default: 0 },
   score_two:   { type: Number, default: 0 },
-  duration:    { type: Number, default: 0 },
   status:      { type: String, enum: ['WAITING', 'IN_PROGRESS', 'FINISHED'], default: 'WAITING' },
   created_at:  { type: Date, default: Date.now },
 })

@@ -19,7 +19,10 @@ export const resolvers = {
     },
 
     recentMatches: async () => {
-      // TODO
+      return Match.find()
+        .populate('player_one player_two')
+        .sort({ created_at: -1 })
+        .limit(20)
     },
 
     rankings: async (_, { period }) => {
@@ -75,7 +78,10 @@ export const resolvers = {
       // Add to queue if not already in it
       await Queue.findOneAndUpdate(
         { player: user.id },
-        { player: user.id, joined_at: new Date() },
+        { $setOnInsert: {
+          player: user.id,
+          joined_at: new Date()
+        } },
         { upsert: true }
       )
 
@@ -89,7 +95,6 @@ export const resolvers = {
           player_two: null,
           score_one: 0,
           score_two: 0,
-          duration: 0,
           status: 'WAITING',
           created_at: new Date(),
         }

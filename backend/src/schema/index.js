@@ -15,7 +15,6 @@ const typeDefs = `
     player_two: User!
     score_one: Int!
     score_two: Int!
-    duration: Int!
     status: MatchStatus!
     created_at: String!
   }
@@ -60,7 +59,7 @@ const typeDefs = `
     login(username: String!, password: String!): String!
     findMatch: Match!
     leaveQueue: Boolean!
-    submitMatch(id: ID!, scoreOne: Int!, scoreTwo: Int!, duration: Int!): Match!
+    submitMatch(id: ID!, scoreOne: Int!, scoreTwo: Int!): Match!
     updateUsername(username: String!): User!
     updatePassword(old: String!, new: String!): Boolean!
   }
