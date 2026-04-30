@@ -18,6 +18,7 @@ const matchSchema = new mongoose.Schema({
   score_two:   { type: Number, default: 0 },
   status:      { type: String, enum: ['WAITING', 'IN_PROGRESS', 'FINISHED'], default: 'WAITING' },
   created_at:  { type: Date, default: Date.now },
+  ended_at:    { type: Date, default: null },
 })
 
 export const Match = mongoose.model('Match', matchSchema)

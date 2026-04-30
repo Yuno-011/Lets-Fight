@@ -6,12 +6,12 @@ import Player from '../game_objects/Player'
 const GameContainer = ({game_width, game_height, setScore}) => {
   const gameRef = useRef(null)
 
-  console.log(game_width, game_height)
+  //console.log(game_width, game_height)
 
   const scaleX = game_width / GAME_STATS.BASE_WIDTH
   const scaleY = game_height / GAME_STATS.BASE_HEIGHT
 
-  console.log(scaleX, scaleY)
+  //console.log(scaleX, scaleY)
 
   useEffect(() => {
     if (!game_width || !game_height) return
@@ -62,6 +62,7 @@ const GameContainer = ({game_width, game_height, setScore}) => {
       const leftPlat = this.add.rectangle(0.215*game_width, 0.74*game_height, 0.14*game_width, 0.05*game_height, GAME_COLORS.GROUND)
       const rightPlat = this.add.rectangle(0.785*game_width, 0.74*game_height, 0.14*game_width, 0.05*game_height, GAME_COLORS.GROUND)
       platforms.add(downPlat); platforms.add(topPlat); platforms.add(leftPlat); platforms.add(rightPlat);
+      platforms.refresh()
 
       // 2. Création des animations
       this.anims.create({ key: 'idle',     frames: this.anims.generateFrameNumbers('biker', { start: 0,  end: 3  }), frameRate: 8,  repeat: -1 })
@@ -245,7 +246,8 @@ const GameContainer = ({game_width, game_height, setScore}) => {
       attacker.attackStatus = "HITLAG"
       attacker.setVelocity({ x: 0, y: 0 })
       target.setVelocity({ x: 0, y: 0 })
-      scene.physics.world.gravity.y = 0
+      attacker.hurtbox.body.setAllowGravity(false)
+      target.hurtbox.body.setAllowGravity(false)
       const currentTime = scene.time.now
 
       if (currentTime - target.lastHitTime < COMBAT_STATS.COMBO_WINDOW) {
@@ -255,10 +257,11 @@ const GameContainer = ({game_width, game_height, setScore}) => {
       }
 
       scene.time.delayedCall(PLAYER_STATS.ATTACK_HITLAG, () => {
-        scene.physics.world.gravity.y = GAME_STATS.GRAVITY * scaleY
+        attacker.hurtbox.body.setAllowGravity(true)
+        target.hurtbox.body.setAllowGravity(true)
         endlag(scene, attacker, "HITLAG")
         target.lastHitTime = currentTime
-        const base_kb = 600 * ((scaleX + scaleY) / 2)
+        const base_kb = PLAYER_STATS.BASE_KNOCKBACK
         const force = base_kb + (target.currentCombo * base_kb * 0.3)
 
         target.hurtbox.body.setDragX(800 * scaleX)

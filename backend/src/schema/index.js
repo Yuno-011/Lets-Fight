@@ -17,6 +17,7 @@ const typeDefs = `
     score_two: Int!
     status: MatchStatus!
     created_at: String!
+    ended_at: String
   }
 
   enum MatchStatus {
@@ -59,6 +60,7 @@ const typeDefs = `
     login(username: String!, password: String!): String!
     findMatch: Match!
     leaveQueue: Boolean!
+    updateMatch(id: ID!, scoreOne: Int!, scoreTwo: Int!): Match!
     submitMatch(id: ID!, scoreOne: Int!, scoreTwo: Int!): Match!
     updateUsername(username: String!): User!
     updatePassword(old: String!, new: String!): Boolean!

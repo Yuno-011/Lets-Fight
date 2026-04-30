@@ -5,6 +5,7 @@ export const GAME_STATS = {
 }
 
 export const PLAYER_STATS = {
+  BASE_KNOCKBACK: 600,
   ATTACK_STARTUP: 100, // ms
   ATTACK_DURATION: 100, // ms
   ATTACK_ENDLAG: 300, // ms

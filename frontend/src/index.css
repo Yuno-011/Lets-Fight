@@ -273,3 +273,13 @@ input, textarea, select {
 
 .match-preview .status.in-progress { color: #00d4ff; }
 .match-preview .status.finished { color: rgba(160, 190, 255, 0.4); }
+
+/* Error */
+.error {
+  background: rgba(255, 50, 100, 0.1);
+  border: 1px solid rgba(255, 50, 100, 0.4);
+  border-radius: 8px;
+  color: #ff3264;
+  padding: 12px 16px;
+  font-size: 14px;
+}

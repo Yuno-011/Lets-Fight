@@ -100,8 +100,6 @@ function FindMatchButton({ onNavigate }) {
     setFinding(true)
   }
 
-  console.log(activeMatchId, finding)
-
   return (
     <div style={{ padding: "8px 16px 16px", borderBottom: `1px solid ${COLORS.borderFaint}` }}>
       <button

@@ -33,8 +33,13 @@ export const resolvers = {
       // TODO
     },
 
-    match: async (_, { id }) => {
-      // TODO
+    match: async (_, { id }, { user }) => {
+      requireAuth(user)
+      const match = await Match.findById(id).populate('player_one player_two')
+      if (!match) throw new Error('MATCH_NOT_FOUND')
+      if (match.player_one._id.toString() !== user.id && match.player_two._id.toString() !== user.id)
+        throw new Error('NOT_AUTHORIZED')
+      return match
     },
   },
 
@@ -97,6 +102,7 @@ export const resolvers = {
           score_two: 0,
           status: 'WAITING',
           created_at: new Date(),
+          ended_at: null,
         }
       }
 
@@ -118,8 +124,24 @@ export const resolvers = {
       return true
     },
 
-    submitMatch: async (_, args) => {
-      // TODO
+    updateMatch: async (_, { id, scoreOne, scoreTwo }) => {
+      const match = await Match.findByIdAndUpdate(
+        id,
+        { score_one: scoreOne, score_two: scoreTwo },
+        { returnDocument: 'after' }
+      ).populate('player_one player_two')
+      if (!match) throw new Error('MATCH_NOT_FOUND')
+      return match
+    },
+
+    submitMatch: async (_, { id, scoreOne, scoreTwo }) => {
+      const match = await Match.findByIdAndUpdate(
+        id,
+        { score_one: scoreOne, score_two: scoreTwo, status: 'FINISHED', ended_at: new Date() },
+        { new: true }
+      ).populate('player_one player_two')
+      if (!match) throw new Error('MATCH_NOT_FOUND')
+      return match
     },
 
     updateUsername: async (_, { username }) => {
@@ -139,5 +161,6 @@ export const resolvers = {
   Match: {
     id: (match) => match._id?.toString() ?? match.id,
     created_at: (match) => match.created_at.toISOString(),
+    ended_at: (match) => match.ended_at?.toISOString() ?? null,
   }
 }

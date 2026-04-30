@@ -3,29 +3,25 @@ import { COLORS } from "../constants/theme"
 
 //  Sub-components 
 
-function PlayerCard({ name, flag, rank, color, avatar }) {
+function PlayerCard({ name, color }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
-      <div style={{ position: "relative" }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: "50%",
-          background: `linear-gradient(135deg, ${color}, ${color}44)`,
-          border: `2px solid ${color}99`,
-          boxShadow: `0 0 20px ${color}66`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "24px",
-        }}>
-          {avatar}
-        </div>
-        <div style={{ position: "absolute", top: -4, right: -4, fontSize: "18px" }}>{flag}</div>
+      <div style={{
+        width: 64, height: 64, borderRadius: "50%",
+        background: `linear-gradient(135deg, ${color}, ${color}44)`,
+        border: `2px solid ${color}99`,
+        boxShadow: `0 0 20px ${color}66`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "24px",
+      }}>
+        {name[0]}
       </div>
       <span style={{ color, fontWeight: 700, fontSize: "15px", letterSpacing: "0.5px" }}>{name}</span>
-      <span style={{ color: "rgba(150,180,255,0.6)", fontSize: "12px" }}>{rank}</span>
     </div>
   )
 }
 
-function ScoreDisplay({ score, timer }) {
+function ScoreDisplay({ score, timer, status }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -45,7 +41,7 @@ function ScoreDisplay({ score, timer }) {
           {score[1]}
         </span>
       </div>
-      <MatchStatus status="Playing..." timer={timer} />
+      <MatchStatus status={status} timer={timer} />
     </div>
   )
 }
@@ -67,7 +63,7 @@ function MatchStatus({ status, timer }) {
 
 //  Scoreboard 
 
-export default function Scoreboard({ score, timer }) {
+export default function Scoreboard({ score, timer, playerOne, playerTwo, status }) {
   return (
     <div style={{
       background: "linear-gradient(135deg, rgba(15,28,60,0.95) 0%, rgba(20,40,80,0.9) 100%)",
@@ -86,19 +82,13 @@ export default function Scoreboard({ score, timer }) {
 
       <div style={{ display: "flex", alignItems: "center", gap: "0px" }}>
         <PlayerCard
-          name="IceTay"
-          flag="🇬🇷"
-          rank="Valley II"
+          name={playerOne}
           color={COLORS.pink}
-          avatar="🎮"
         />
-        <ScoreDisplay score={score} timer={timer} />
+        <ScoreDisplay score={score} timer={timer} status={status} />
         <PlayerCard
-          name="Quoicoubinks"
-          flag="🇫🇷"
-          rank="Valley II"
+          name={playerTwo}
           color={COLORS.purple}
-          avatar="🎯"
         />
       </div>
     </div>
