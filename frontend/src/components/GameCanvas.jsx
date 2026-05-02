@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import GameContainer from "./GameContainer"
 import { GAME_STATS } from "../constants/game"
 
-export default function GameCanvas({ setScore }) {
+export default function GameCanvas({ setScore, disabled }) {
   const wrapperRef = useRef(null)
   const [size, setSize] = useState(null)
   const BASE_RATIO = GAME_STATS.BASE_WIDTH / GAME_STATS.BASE_HEIGHT
@@ -25,7 +25,7 @@ export default function GameCanvas({ setScore }) {
 
   return (
     <div ref={wrapperRef} style={{ width: "100%", height: "100%", display: 'flex', justifyContent: 'center' }}>
-      {size && <GameContainer game_width={size.width} game_height={size.height} setScore={setScore} />}
+      {size && <GameContainer game_width={size.width} game_height={size.height} setScore={setScore} disabled={disabled} />}
     </div>
   )
 }

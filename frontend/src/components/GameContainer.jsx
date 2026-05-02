@@ -3,7 +3,7 @@ import Phaser from 'phaser'
 import { PLAYER_STATS, GAME_COLORS, COMBAT_STATS, GAME_STATS } from '../constants/game'
 import Player from '../game_objects/Player'
 
-const GameContainer = ({game_width, game_height, setScore}) => {
+const GameContainer = ({game_width, game_height, setScore, disabled}) => {
   const gameRef = useRef(null)
 
   //console.log(game_width, game_height)
@@ -98,6 +98,7 @@ const GameContainer = ({game_width, game_height, setScore}) => {
     }
 
     function update() {
+      if(disabled) this.scene.pause(); return
       // Mouvement P1
       if (p1.canAct()) {
         if (p1.keys.left.isDown) {

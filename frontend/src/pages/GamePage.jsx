@@ -1,36 +1,44 @@
 import { useEffect, useState } from "react"
 import GameCanvas from "../components/GameCanvas"
 import Scoreboard from "../components/Scoreboard"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { gqlFetch } from "../api"
+import WinnerScreen from "../components/WinnerScreen"
 
 const GET_MATCH = `
-  query GetMatch($id: ID!) {
-    match(id: $id) {
-      id
-      player_one { username }
-      player_two { username }
-      score_one
-      score_two
-      status
-      created_at
-      ended_at
+    query GetMatch($id: ID!) {
+        match(id: $id) {
+            id
+            player_one { username }
+            player_two { username }
+            score_one
+            score_two
+            status
+            created_at
+            ended_at
+        }
     }
-  }
 `
 
-const GET_SCORE = `query GetMatch($id: ID!) {
-    match(id: $id) {
-      score_one
-      score_two
-      status
+const GET_SCORE = `
+    query GetMatch($id: ID!) {
+        match(id: $id) {
+            score_one
+            score_two
+            status
+        }
     }
-  }
 `
 
 const UPDATE_SCORE = `
     mutation UpdateScore($id: ID!, $scoreOne: Int!, $scoreTwo: Int!) {
         updateMatch(id: $id, scoreOne: $scoreOne, scoreTwo: $scoreTwo) { id }
+    }
+`
+
+const SUBMIT_MATCH = `
+    mutation SubmitMatch($id: ID!, $scoreOne: Int!, $scoreTwo: Int!) {
+        submitMatch(id: $id, scoreOne: $scoreOne, scoreTwo: $scoreTwo) { id }
     }
 `
 
@@ -41,6 +49,7 @@ export default function GamePage() {
     const [timer, setTimer] = useState(0)
     const [status, setStatus] = useState('WAITING')
     const [players, setPlayers] = useState({ one: '...', two: '...' })
+    const navigate = useNavigate()
     let interval
 
     useEffect(() => {   
@@ -78,18 +87,29 @@ export default function GamePage() {
     function handleUpdateScore(newScore) {
         setScore(prev => {
             const next = newScore(prev)
-            gqlFetch(UPDATE_SCORE, {
-                id: id,
-                scoreOne: next[0],
-                scoreTwo: next[1],
-            }).catch(err => setError(err))
+            if (next[0] >= 10 || next[1] >= 10) {
+                gqlFetch(SUBMIT_MATCH, {
+                    id,
+                    scoreOne: next[0],
+                    scoreTwo: next[1],
+                }).catch(err => setError(err))
+            } else {
+                gqlFetch(UPDATE_SCORE, {
+                    id: id,
+                    scoreOne: next[0],
+                    scoreTwo: next[1],
+                }).catch(err => setError(err))
+            }
 
             return next
         })
     }
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px", height: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", height: "100%", position: 'relative' }}>
+            { (score[0] >= 10 || score[1] >= 10) && (
+                <WinnerScreen winner={(score[0] > score[1]) ? players.one : players.two} onContinue={() => navigate('/home')}/>
+            )}
             <Scoreboard score={score} timer={timer} playerOne={players.one} playerTwo={players.two} status={status}/>
 
             { error==null && <div style={{
@@ -102,7 +122,7 @@ export default function GamePage() {
                 boxShadow: "0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
             }}>
                 <div style={{ height: "calc(100%)" }}>
-                    <GameCanvas setScore={handleUpdateScore} />
+                    <GameCanvas setScore={handleUpdateScore} disabled={(score[0] >= 10 || score[1] >= 10)}/>
                 </div>
             </div> }
             { error && <div className="error">Something went wrong: {error.message}</div> }
