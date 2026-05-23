@@ -126,7 +126,8 @@ export const resolvers = {
 
     updateMatch: async (_, { id, scoreOne, scoreTwo }, { user }) => {
       requireAuth(user)
-      if (match.player_one._id.toString() !== user.id && match.player_two._id.toString() !== user.id)
+      const dbMatch = await Match.findById(id).populate('player_one player_two')
+      if (dbMatch.player_one._id.toString() !== user.id && dbMatch.player_two._id.toString() !== user.id)
         throw new Error('NOT_AUTHORIZED')
       const match = await Match.findByIdAndUpdate(
         id,
@@ -139,7 +140,8 @@ export const resolvers = {
 
     submitMatch: async (_, { id, scoreOne, scoreTwo }, { user }) => {
       requireAuth(user)
-      if (match.player_one._id.toString() !== user.id && match.player_two._id.toString() !== user.id)
+      const dbMatch = await Match.findById(id).populate('player_one player_two')
+      if (dbMatch.player_one._id.toString() !== user.id && dbMatch.player_two._id.toString() !== user.id)
         throw new Error('NOT_AUTHORIZED')
       const match = await Match.findByIdAndUpdate(
         id,

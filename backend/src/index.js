@@ -5,12 +5,16 @@ import dotenv from 'dotenv'
 import { schema } from './schema/index.js'
 import { getUser } from './middleware/auth.js'
 import { connectDB } from './db/index.js'
+import { Server } from 'socket.io'
+import { createServer } from 'http'
+import { initSocket } from './game/index.js'
 
 dotenv.config()
 
 const app = express()
 
 app.use(cors({ origin: process.env.FRONTEND_URL }))
+const httpServer = createServer(app)
 
 app.use('/graphql', createHandler({
   schema,
@@ -25,6 +29,9 @@ app.get('/health', (_, res) => res.json({ ok: true }))
 
 const PORT = process.env.PORT ?? 4000
 
+// game socket
+initSocket(httpServer)
+
 connectDB().then(() => {
-  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`))
+  httpServer.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`))
 })

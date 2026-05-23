@@ -1,4 +1,4 @@
-const GQL_URL = 'http://localhost:4000/graphql'
+const GQL_URL = `${import.meta.env.VITE_API_URL}/graphql`
 
 export async function gqlFetch(query, variables = {}) {
   const token = localStorage.getItem('token') ?? ''

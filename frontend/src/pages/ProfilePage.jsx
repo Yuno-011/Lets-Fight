@@ -11,8 +11,6 @@ export default function ProfilePage() {
         navigate('/home')
     }
 
-    console.log(user)
-
     if (user !== undefined && user !== null) {
         return (
             <div>

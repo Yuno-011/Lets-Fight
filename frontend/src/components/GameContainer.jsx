@@ -1,19 +1,25 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import Phaser from 'phaser'
 import { PLAYER_STATS, GAME_COLORS, COMBAT_STATS, GAME_STATS } from '../constants/game'
 import Player from '../game_objects/Player'
+import { io } from 'socket.io-client'
+import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import ReadyPanel from './ReadyPanel'
 
-const GameContainer = ({game_width, game_height, setScore, disabled}) => {
+const GameContainer = memo(({game_width, game_height, setScore, socketRef, matchId, myPlayer, active}) => {
+  console.log('GameContainer render', game_width, game_height)
+
   const gameRef = useRef(null)
-
-  //console.log(game_width, game_height)
+  const activeRef = useRef(false)
 
   const scaleX = game_width / GAME_STATS.BASE_WIDTH
   const scaleY = game_height / GAME_STATS.BASE_HEIGHT
 
-  //console.log(scaleX, scaleY)
+  useEffect(() => { activeRef.current = active }, [active])
 
   useEffect(() => {
+    console.log('Phaser useEffect ran', game_width, game_height)
     if (!game_width || !game_height) return
 
     const config = {
@@ -98,7 +104,7 @@ const GameContainer = ({game_width, game_height, setScore, disabled}) => {
     }
 
     function update() {
-      if(disabled) this.scene.pause(); return
+      if (!activeRef.current) return
       // Mouvement P1
       if (p1.canAct()) {
         if (p1.keys.left.isDown) {
@@ -283,6 +289,6 @@ const GameContainer = ({game_width, game_height, setScore, disabled}) => {
   }, [game_width, game_height])
 
   return <div id="phaser-container" style={{ borderRadius: '8px', overflow: 'hidden' }} />
-}
+})
 
 export default GameContainer

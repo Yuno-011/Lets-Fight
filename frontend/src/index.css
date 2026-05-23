@@ -273,6 +273,30 @@ input, textarea, select {
 .match-preview .status.in-progress { color: #00d4ff; }
 .match-preview .status.finished { color: rgba(160, 190, 255, 0.4); }
 
+/* Overlay panels (Winner Screen / Ready) */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10,18,41,0.56);
+  backdrop-filter: blur(2px);
+}
+
+.overlay .overlay-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  background: rgba(8,18,40,0.95);
+  border: 1px solid black;
+  border-radius: 20px;
+  padding: 48px 64px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+}
+
 /* Error */
 .error {
   background: rgba(255, 50, 100, 0.1);
