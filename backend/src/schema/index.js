@@ -31,6 +31,14 @@ const typeDefs = `
     losses: Int!
     win_rate: Float!
     total_matches: Int!
+    last_matches: [String!]!
+  }
+
+  type RankedUser {
+    rank: Int!
+    username: String!
+    elo: Int!
+    stats: UserStats!
   }
 
   type GlobalStats {
@@ -40,17 +48,12 @@ const typeDefs = `
     total_players: Int!
   }
 
-  enum Period {
-    ALL_TIME
-    MONTHLY
-  }
-
   type Query {
     health: String
     me: User
     user(username: String!): User
     recentMatches: [Match!]!
-    rankings(period: Period!): [User!]!
+    ranking: [RankedUser!]!
     globalStats: GlobalStats!
     match(id: ID!): Match
     myActiveMatch: Match

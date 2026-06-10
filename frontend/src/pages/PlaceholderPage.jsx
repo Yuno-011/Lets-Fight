@@ -2,7 +2,7 @@ export default function PlaceholderPage({ page }) {
   const config = {
     about:    { icon: "ℹ️", label: "About"      },
     user:     { icon: "👤", label: "User"       },
-    rankings: { icon: "🏅", label: "Rankings"   },
+    ranking:  { icon: "🏅", label: "Ranking"    },
     stats:    { icon: "📊", label: "Statistics" },
   }
 

@@ -9,7 +9,7 @@ export function HomeIcon() {
   )
 }
 
-export function RankingsIcon() {
+export function RankingIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -50,7 +50,7 @@ export function ProfileIcon() {
 
 export const NAV_ITEMS = [
   { id: "home",      label: "Home",       icon: HomeIcon     },
-  { id: "rankings",  label: "Rankings",   icon: RankingsIcon },
+  { id: "ranking",  label: "Ranking",   icon: RankingIcon },
   { id: "stats",     label: "Statistics", icon: StatsIcon    },
   { id: "about",     label: "About",      icon: AboutIcon    },
   { id: "profile",  label: "Profile",    icon: ProfileIcon },

@@ -3,6 +3,51 @@ import jwt from 'jsonwebtoken'
 import { User, Match, Queue } from '../db/Models.js'
 import { requireAuth } from '../middleware/auth.js'
 
+function calculateElo(winnerElo, loserElo) {
+  const K = 32
+  const expectedWinner = 1 / (1 + Math.pow(10, (loserElo - winnerElo) / 400))
+  const expectedLoser = 1 - expectedWinner
+
+  return {
+    winnerDelta: Math.round(K * (1 - expectedWinner)),
+    loserDelta: Math.round(K * (0 - expectedLoser))
+  }
+}
+
+async function getUserStats(userId) {
+  const wins = await Match.countDocuments({
+    $or: [
+      { player_one: userId, $expr: { $gt: ['$score_one', '$score_two'] } },
+      { player_two: userId, $expr: { $gt: ['$score_two', '$score_one'] } }
+    ],
+    status: 'FINISHED'
+  })
+  const losses = await Match.countDocuments({
+    $or: [
+      { player_one: userId, $expr: { $lt: ['$score_one', '$score_two'] } },
+      { player_two: userId, $expr: { $lt: ['$score_two', '$score_one'] } }
+    ],
+    status: 'FINISHED'
+  })
+  const totalMatches = wins + losses
+  const winRate = totalMatches === 0 ? 0 : Math.round((wins / totalMatches) * 100)
+  return { wins, losses, winRate, totalMatches }
+}
+
+async function getLastMatches(userId) {
+  const matches = await Match.find({
+    $or: [{ player_one: userId }, { player_two: userId }],
+    status: 'FINISHED'
+  }).sort({ created_at: -1 }).limit(5)
+
+  return matches.map(m => {
+    const isP1 = m.player_one.toString() === userId.toString()
+    const myScore = isP1 ? m.score_one : m.score_two
+    const theirScore = isP1 ? m.score_two : m.score_one
+    return myScore > theirScore ? 'WIN' : 'LOSS'
+  })
+}
+
 export const resolvers = {
   Query: {
     health: () => 'OK',
@@ -25,8 +70,18 @@ export const resolvers = {
         .limit(20)
     },
 
-    rankings: async (_, { period }) => {
-      // TODO
+    ranking: async () => {
+      const users = await User.find().sort({ elo: -1 }).limit(100)
+      return Promise.all(users.map(async (user, index) => {
+        const stats = await getUserStats(user._id)
+        const lastMatches = await getLastMatches(user._id)
+        return {
+          rank: index + 1,
+          username: user.username,
+          elo: user.elo,
+          stats: { ...stats, lastMatches }
+        }
+      }))
     },
 
     globalStats: async () => {
@@ -157,6 +212,14 @@ export const resolvers = {
         { new: true }
       ).populate('player_one player_two')
       if (!match) throw new Error('MATCH_NOT_FOUND')
+      
+      // update elo
+      const winner = scoreOne > scoreTwo ? match.player_one : match.player_two
+      const loser = scoreOne > scoreTwo ? match.player_two : match.player_one
+      const { winnerDelta, loserDelta } = calculateElo(winner.elo, loser.elo)
+      await User.findByIdAndUpdate(winner._id, { $inc: { elo: winnerDelta } })
+      await User.findByIdAndUpdate(loser._id, { $inc: { elo: loserDelta } })
+
       return match
     },
 
@@ -178,5 +241,10 @@ export const resolvers = {
     id: (match) => match._id?.toString() ?? match.id,
     created_at: (match) => match.created_at.toISOString(),
     ended_at: (match) => match.ended_at?.toISOString() ?? null,
+  },
+
+  UserStats: {
+    win_rate: (stats) => stats.winRate ?? 0,
+    last_matches: (stats) => stats.lastMatches ?? []
   }
 }

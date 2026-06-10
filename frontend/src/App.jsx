@@ -7,8 +7,11 @@ import PlaceholderPage from "./pages/PlaceholderPage"
 import { FONTS } from "./constants/theme"
 import { GuestRoute, ProtectedRoute } from "./guards/ProtectedRoute"
 import ProfilePage from "./pages/ProfilePage"
+import RankingPage from "./pages/RankingPage"
+import { useIsMobile } from "./hooks/useIsMobile"
 
 export default function App() {
+  const isMobile = useIsMobile()
   return (
     <div style={{
       display: "flex", height: "100vh", width: "100vw",
@@ -21,12 +24,12 @@ export default function App() {
     }}>
       <Navbar/>
 
-      <main style={{ flex: 1, overflow: "auto", padding: "32px", zIndex: 1 }}>
+      <main style={{ flex: 1, overflow: "auto", padding: isMobile ? "105px 16px 16px" : "32px", zIndex: 1 }}>
         <Routes>
           <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/match/:id" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
-          <Route path="/rankings" element={<PlaceholderPage page="rankings" />} />
+          <Route path="/ranking" element={<RankingPage />} />
           <Route path="/stats" element={<PlaceholderPage page="stats" />} />
           <Route path="/about" element={<PlaceholderPage page="about" />} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
