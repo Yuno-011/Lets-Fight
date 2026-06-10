@@ -41,8 +41,8 @@ const UPDATE_SCORE = `
 `
 
 const SUBMIT_MATCH = `
-    mutation SubmitMatch($id: ID!, $scoreOne: Int!, $scoreTwo: Int!, $duration: Int!) {
-        submitMatch(id: $id, scoreOne: $scoreOne, scoreTwo: $scoreTwo, duration: $duration) { id }
+    mutation SubmitMatch($id: ID!, $scoreOne: Int!, $scoreTwo: Int!) {
+        submitMatch(id: $id, scoreOne: $scoreOne, scoreTwo: $scoreTwo) { id }
     }
 `
 

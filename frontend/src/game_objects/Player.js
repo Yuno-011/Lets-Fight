@@ -42,28 +42,19 @@ export default class Player {
 
         // Animate based on state
         if (playAnim) {
-            if (this.isInHitstun) {
-                this.stopTrail()
-                this.setAnim('hurt')
-            } else if (this.isAttacking) {
-                this.startTrail()
-                this.setAnim('dash')
-            } else if (!this.hurtbox.body.touching.down) {
-                this.stopTrail()
-                this.setAnim('jump')
-            } else if (this.hurtbox.body.velocity.x != 0) {
-                this.stopTrail()
-                this.setAnim('run')
-            } else {
-                this.stopTrail()
-                this.setAnim('idle')
-            }
+            if (this.isInHitstun) this.setAnim('hurt')
+            else if (this.isAttacking) this.setAnim('dash')
+            else if (!this.hurtbox.body.touching.down) this.setAnim('jump')
+            else if (this.hurtbox.body.velocity.x != 0) this.setAnim('run')
+            else this.setAnim('idle')
         }
     }
 
     setAnim(key) {
         this.anim = key
         this.sprite.play(key, true)
+        if(key === 'dash') this.startTrail()
+        else this.stopTrail()
     }
 
     canAct() {
@@ -136,6 +127,7 @@ export default class Player {
     }
 
     resetStats() {
+        this.stopTrail()
         this.currentCombo = 0
         this.lastHitTime = 0
         this.direction = { x: 0, y: 0 }

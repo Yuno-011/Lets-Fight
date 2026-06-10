@@ -101,20 +101,33 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
       socketRef.current.on('opponentState', (state) => {
         oppo.hurtbox.setPosition(state.x * game_width, state.y * game_height)
         oppo.setVelocity({ x: state.vx * game_width, y: state.vy * game_height })
-        // if (state.hitboxActive) {
-        //   oppo.attackStatus = state.attackStatus
-        //   if (oppo.hitbox == null) {
-        //     oppo.hitbox = this.add.rectangle(
-        //       state.hitboxX, state.hitboxY,
-        //       Math.max(0.04*game_width, 0.1*game_height),
-        //       Math.max(0.04*game_width, 0.1*game_height),
-        //       GAME_COLORS.HITBOX
-        //     )
-        //     oppo.hitbox.setAlpha(0.5)
-        //   } else oppo.setPosition(state.hitboxX, state.hitboxY)
-        // } else if (oppo.hitbox != null) oppo.hitbox.destroy()
+        if (state.hitboxActive) {
+          oppo.attackStatus = state.attackStatus
+          if (oppo.attackStatus === "NONE") oppo.isAttacking = false
+          else oppo.isAttacking = true
+          if (oppo.hitbox == null) {
+            oppo.hitbox = this.add.rectangle(
+              state.hitboxX * game_width, state.hitboxY * game_height,
+              Math.max(0.04*game_width, 0.1*game_height),
+              Math.max(0.04*game_width, 0.1*game_height),
+              GAME_COLORS.HITBOX
+            )
+            oppo.hitbox.setAlpha(0.5)
+          } else oppo.hitbox.setPosition(state.hitboxX * game_width, state.hitboxY * game_height)
+        } else if (oppo.hitbox != null) {
+          oppo.hitbox.destroy()
+          oppo.hitbox = null
+        }
         oppo.direction = state.direction
         oppo.setAnim(state.anim)
+      })
+
+      socketRef.current.on('hitReceived', (hitData) => applyKnockbackTarget(this, me, hitData))
+
+      socketRef.current.on('playerDied', () => {
+        console.log('testmdr')
+        if (myPlayer === 1) setScore(sc => [sc[0] + 1, sc[1]])
+        if (myPlayer === 2) setScore(sc => [sc[0], sc[1] + 1])
       })
     }
 
@@ -129,24 +142,12 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
         }
         if (myKeys.jump.isDown && me.hurtbox.body.touching.down) me.setVelocity({ y: -(900 * scaleY) })
       }
-    
-      // Mouvement P2
-      // if (p2.canAct()) {
-      //   if (p2.keys.left.isDown) {
-      //     p2.setVelocity({ x: -(400 * scaleX) })
-      //   } else if (p2.keys.right.isDown) {
-      //     p2.setVelocity({ x: (400 * scaleX) })
-      //   }
-      //   if (p2.keys.jump.isDown && p2.hurtbox.body.touching.down) p2.setVelocity({ y: -(900 * scaleY) })
-      // }
 
       // Player Direction
       if (!me.isAttacking) me.setDirection(this.input.activePointer)
-      // if (!p2.isAttacking) p2.setDirection(this.input.activePointer)
       
       // Air attack Counter
       if (me.hurtbox.body.touching.down) me.hasAttacked = false
-      if (oppo.hurtbox.body.touching.down) oppo.hasAttacked = false
 
       // Hitbox follows the Player
       if (me.hitbox !== null) {
@@ -155,41 +156,31 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
               me.hurtbox.y + me.direction.y * 0.05*game_height
           )
       }
-      // if (p2.hitbox !== null) {
-      //     p2.hitbox.setPosition(
-      //         p2.hurtbox.x + p2.direction.x * 0.02*game_width,
-      //         p2.hurtbox.y + p2.direction.y * 0.05*game_height
-      //     )
-      // }
 
       // Sprites update
       me.updateSprite()
       oppo.updateSprite(false)
 
       // Détection de collision manuelle des attaques
-      if (me.attackStatus == "ACTIVE" && p2.attackStatus != "HITLAG"
-        && Phaser.Geom.Intersects.RectangleToRectangle(me.hitbox.getBounds(), p2.hurtbox.getBounds())
+      if (me.attackStatus == "ACTIVE" && oppo.attackStatus != "HITLAG"
+        && Phaser.Geom.Intersects.RectangleToRectangle(me.hitbox.getBounds(), oppo.hurtbox.getBounds())
       ) {
         me.hasAttacked = false
-        applyKnockback(this, oppo, me)
+        applyKnockbackAttacker(this, me)
+        socketRef.current.emit('playerHit', {
+          matchId,
+          direction: me.direction
+        })
       }
-      // if (p2.attackStatus == "ACTIVE" && p1.attackStatus != "HITLAG"
-      //   && Phaser.Geom.Intersects.RectangleToRectangle(p2.hitbox.getBounds(), p1.hurtbox.getBounds())
-      // ) {
-      //   p2.hasAttacked = false
-      //   applyKnockback(this, p1, p2)
-      // }
 
       // Reset si tombe
-      // if (isDead(p1) || isDead(p2)) {
       if (isDead(me)) {
         if (myPlayer === 1) setScore(sc => [sc[0], sc[1] + 1])
         if (myPlayer === 2) setScore(sc => [sc[0] + 1, sc[1]])
         const offset = (2*myPlayer-3) * 0.1*game_width
         me.hurtbox.setPosition(0.5*game_width + offset, 0.45*game_height)
         me.resetStats()
-        oppo.hurtbox.setPosition(0.5*game_width - offset, 0.45*game_height)
-        oppo.resetStats()
+        socketRef.current.emit('playerDied', { matchId: matchId })
       }
 
       // emit my state to server
@@ -272,22 +263,27 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
       })
     }
 
-    function applyKnockback(scene, target, attacker) {
-      // HITLAG
-      const dirX = attacker.direction.x
-      const dirY = attacker.direction.y
-      target.isInHitstun = true
-      if (target.attackStatus != "ACTIVE") {
-        target.isAttacking = false
-        target.attackStatus = "NONE"
-      }
+    // Attacker side: hitlag freeze only
+    function applyKnockbackAttacker(scene, attacker) {
       attacker.attackStatus = "HITLAG"
       attacker.setVelocity({ x: 0, y: 0 })
-      target.setVelocity({ x: 0, y: 0 })
       attacker.hurtbox.body.setAllowGravity(false)
-      target.hurtbox.body.setAllowGravity(false)
-      const currentTime = scene.time.now
 
+      scene.time.delayedCall(PLAYER_STATS.ATTACK_HITLAG, () => {
+        attacker.hurtbox.body.setAllowGravity(true)
+        endlag(scene, attacker, "HITLAG")
+      })
+    }
+
+    // Target side: called via socket event
+    function applyKnockbackTarget(scene, target, hitData) {
+      const { dirX, dirY } = hitData
+
+      target.isInHitstun = true
+      target.setVelocity({ x: 0, y: 0 })
+      target.hurtbox.body.setAllowGravity(false)
+
+      const currentTime = scene.time.now
       if (currentTime - target.lastHitTime < COMBAT_STATS.COMBO_WINDOW) {
         target.currentCombo = Math.min(target.currentCombo + 1, COMBAT_STATS.MAX_COMBO)
       } else {
@@ -295,16 +291,14 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
       }
 
       scene.time.delayedCall(PLAYER_STATS.ATTACK_HITLAG, () => {
-        attacker.hurtbox.body.setAllowGravity(true)
         target.hurtbox.body.setAllowGravity(true)
-        endlag(scene, attacker, "HITLAG")
         target.lastHitTime = currentTime
+
         const base_kb = PLAYER_STATS.BASE_KNOCKBACK
         const force = base_kb + (target.currentCombo * base_kb * 0.3)
 
         target.hurtbox.body.setDragX(800 * scaleX)
         target.hurtbox.body.setMaxVelocity(2000 * scaleX, 1200 * scaleY)
-        
         target.setVelocity({ x: dirX * force * scaleX })
         target.setVelocity({ y: dirY * force * scaleY * 0.5 })
 

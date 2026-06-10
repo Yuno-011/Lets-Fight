@@ -78,24 +78,22 @@ export function initSocket(httpServer) {
         })
 
 
-        // Player sends their state — relay to the other player only
+        // Player sends their state
         socket.on('playerState', ({ matchId, state }) => {
             socket.broadcast.to(matchId).emit('opponentState', state)
         })
 
-        // Player sends an attack — relay to the other player only
-        socket.on('attack', ({ matchId, direction }) => {
-            socket.broadcast.to(matchId).emit('attack', direction)
+        // Player lands an attack
+        socket.on('playerHit', ({ matchId, direction }) => {
+            socket.to(matchId).emit('hitReceived', {
+                dirX: direction.x,
+                dirY: direction.y
+            })
         })
 
-        // Player died — relay to the other player only
+        // Player died
         socket.on('playerDied', ({ matchId, scores }) => {
             socket.broadcast.to(matchId).emit('playerDied', scores)
-        })
-
-        socket.on('matchFinished', ({ matchId }) => {
-            if (!rooms[matchId]) return
-            rooms[matchId].status = 'FINISHED'
         })
 
         socket.on('disconnect', () => {
