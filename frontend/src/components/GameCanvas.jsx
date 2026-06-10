@@ -4,8 +4,6 @@ import GameContainer from "./GameContainer"
 import { GAME_STATS } from "../constants/game"
 
 const GameCanvas = memo(({ setScore, socketRef, matchId, myPlayer, active }) => {
-  console.log('GameCanvas render', { active, myPlayer, matchId })
-
   const wrapperRef = useRef(null)
   const [size, setSize] = useState(null)
   const BASE_RATIO = GAME_STATS.BASE_WIDTH / GAME_STATS.BASE_HEIGHT
@@ -13,14 +11,12 @@ const GameCanvas = memo(({ setScore, socketRef, matchId, myPlayer, active }) => 
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
-      console.log('ResizeObserver fired', width, height)
       let newWidth = width
       let newHeight = width / BASE_RATIO
       if (newHeight > height) {
         newHeight = height
         newWidth = height * BASE_RATIO
       }
-      console.log('setSize called', newWidth, newHeight)
       setSize({ width: Math.floor(newWidth), height: Math.floor(newHeight) })
     })
     observer.observe(wrapperRef.current)

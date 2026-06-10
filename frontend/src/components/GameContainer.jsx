@@ -8,8 +8,6 @@ import { useState } from 'react'
 import ReadyPanel from './ReadyPanel'
 
 const GameContainer = memo(({game_width, game_height, setScore, socketRef, matchId, myPlayer, active}) => {
-  console.log('GameContainer render', game_width, game_height)
-
   const gameRef = useRef(null)
   const activeRef = useRef(false)
 
@@ -19,7 +17,6 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
   useEffect(() => { activeRef.current = active }, [active])
 
   useEffect(() => {
-    console.log('Phaser useEffect ran', game_width, game_height)
     if (!game_width || !game_height) return
 
     const config = {
@@ -44,8 +41,11 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
     const game = new Phaser.Game(config)
     gameRef.current = game
 
+    let me, oppo
     let p1, p2
     let platforms
+
+    let myKeys = null
 
     function preload() {
       this.load.image("bg", "/assets/game_bg.png")
@@ -61,7 +61,7 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
         .setOrigin(0,0)
         .setDisplaySize(game_width, game_height)
 
-      // 1. Création du sol (Plateforme centrale)
+      // 1. Création des plateformes
       platforms = this.physics.add.staticGroup()
       const downPlat = this.add.rectangle(0.5*game_width, 0.92*game_height, 0.46*game_width, 0.07*game_height, GAME_COLORS.GROUND)
       const topPlat = this.add.rectangle(0.5*game_width, 0.6*game_height, 0.26*game_width, 0.07*game_height, GAME_COLORS.GROUND)
@@ -79,101 +79,132 @@ const GameContainer = memo(({game_width, game_height, setScore, socketRef, match
       this.anims.create({ key: 'hurt',     frames: this.anims.generateFrameNumbers('biker', { start: 30, end: 31 }), frameRate: 20, repeat: -1 })
 
       // 2. Création des joueurs
-      const wasd = this.input.keyboard.addKeys({
+      myKeys = this.input.keyboard.addKeys({
         up: Phaser.Input.Keyboard.KeyCodes.W,
         left: Phaser.Input.Keyboard.KeyCodes.A,
         right: Phaser.Input.Keyboard.KeyCodes.D,
         down: Phaser.Input.Keyboard.KeyCodes.S,
         jump: Phaser.Input.Keyboard.KeyCodes.SPACE,
       })
-      const arrows = this.input.keyboard.addKeys({
-        up: Phaser.Input.Keyboard.KeyCodes.UP,
-        left: Phaser.Input.Keyboard.KeyCodes.LEFT,
-        right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
-        down: Phaser.Input.Keyboard.KeyCodes.DOWN,
-        jump: Phaser.Input.Keyboard.KeyCodes.NUMPAD_ZERO,
-      })
-      p1 = new Player(this, 0.5*game_width - 0.1*game_width, 0.45*game_height, 0.02*game_width, 0.1*game_height, GAME_COLORS.PLAYER_ONE, wasd, scaleX, scaleY)
-      p2 = new Player(this, 0.5*game_width + 0.1*game_width, 0.45*game_height, 0.02*game_width, 0.1*game_height, GAME_COLORS.PLAYER_TWO, arrows, scaleX, scaleY)
-      this.input.on('pointerdown', (pointer) => handleAttack(this, p1))
+      p1 = new Player(this, 0.5*game_width - 0.1*game_width, 0.45*game_height, 0.02*game_width, 0.1*game_height, GAME_COLORS.PLAYER_ONE, scaleX, scaleY)
+      p2 = new Player(this, 0.5*game_width + 0.1*game_width, 0.45*game_height, 0.02*game_width, 0.1*game_height, GAME_COLORS.PLAYER_TWO, scaleX, scaleY)
+      me = myPlayer === 1 ? p1 : p2
+      oppo = myPlayer === 1 ? p2 : p1
+      this.input.on('pointerdown', (pointer) => handleAttack(this, me))
 
       // 3. Collisions
       this.physics.add.collider(p1.hurtbox, platforms)
       this.physics.add.collider(p2.hurtbox, platforms)
       this.physics.add.collider(p1.hurtbox, p2.hurtbox) // Les joueurs se rentrent dedans
+
+      // 4. Listeners pour le multijoueur
+      socketRef.current.on('opponentState', (state) => {
+        oppo.hurtbox.setPosition(state.x * game_width, state.y * game_height)
+        oppo.setVelocity({ x: state.vx * game_width, y: state.vy * game_height })
+        // if (state.hitboxActive) {
+        //   oppo.attackStatus = state.attackStatus
+        //   if (oppo.hitbox == null) {
+        //     oppo.hitbox = this.add.rectangle(
+        //       state.hitboxX, state.hitboxY,
+        //       Math.max(0.04*game_width, 0.1*game_height),
+        //       Math.max(0.04*game_width, 0.1*game_height),
+        //       GAME_COLORS.HITBOX
+        //     )
+        //     oppo.hitbox.setAlpha(0.5)
+        //   } else oppo.setPosition(state.hitboxX, state.hitboxY)
+        // } else if (oppo.hitbox != null) oppo.hitbox.destroy()
+        oppo.direction = state.direction
+        oppo.setAnim(state.anim)
+      })
     }
 
     function update() {
       if (!activeRef.current) return
-      // Mouvement P1
-      if (p1.canAct()) {
-        if (p1.keys.left.isDown) {
-          p1.setVelocity({ x: -(400 * scaleX) })
-        } else if (p1.keys.right.isDown) {
-          p1.setVelocity({ x: (400 * scaleX) })
+      // Mouvement Joueur
+      if (me.canAct()) {
+        if (myKeys.left.isDown) {
+          me.setVelocity({ x: -(400 * scaleX) })
+        } else if (myKeys.right.isDown) {
+          me.setVelocity({ x: (400 * scaleX) })
         }
-        if (p1.keys.jump.isDown && p1.hurtbox.body.touching.down) p1.setVelocity({ y: -(900 * scaleY) })
+        if (myKeys.jump.isDown && me.hurtbox.body.touching.down) me.setVelocity({ y: -(900 * scaleY) })
       }
     
       // Mouvement P2
-      if (p2.canAct()) {
-        if (p2.keys.left.isDown) {
-          p2.setVelocity({ x: -(400 * scaleX) })
-        } else if (p2.keys.right.isDown) {
-          p2.setVelocity({ x: (400 * scaleX) })
-        }
-        if (p2.keys.jump.isDown && p2.hurtbox.body.touching.down) p2.setVelocity({ y: -(900 * scaleY) })
-      }
+      // if (p2.canAct()) {
+      //   if (p2.keys.left.isDown) {
+      //     p2.setVelocity({ x: -(400 * scaleX) })
+      //   } else if (p2.keys.right.isDown) {
+      //     p2.setVelocity({ x: (400 * scaleX) })
+      //   }
+      //   if (p2.keys.jump.isDown && p2.hurtbox.body.touching.down) p2.setVelocity({ y: -(900 * scaleY) })
+      // }
 
       // Player Direction
-      if (!p1.isAttacking) p1.setDirection(this.input.activePointer)
-      if (!p2.isAttacking) p2.setDirection(this.input.activePointer)
+      if (!me.isAttacking) me.setDirection(this.input.activePointer)
+      // if (!p2.isAttacking) p2.setDirection(this.input.activePointer)
       
       // Air attack Counter
-      if (p1.hurtbox.body.touching.down) p1.hasAttacked = false
-      if (p2.hurtbox.body.touching.down) p2.hasAttacked = false
+      if (me.hurtbox.body.touching.down) me.hasAttacked = false
+      if (oppo.hurtbox.body.touching.down) oppo.hasAttacked = false
 
       // Hitbox follows the Player
-      if (p1.hitbox !== null) {
-          p1.hitbox.setPosition(
-              p1.hurtbox.x + p1.direction.x * 0.02*game_width,
-              p1.hurtbox.y + p1.direction.y * 0.05*game_height
+      if (me.hitbox !== null) {
+          me.hitbox.setPosition(
+              me.hurtbox.x + me.direction.x * 0.02*game_width,
+              me.hurtbox.y + me.direction.y * 0.05*game_height
           )
       }
-      if (p2.hitbox !== null) {
-          p2.hitbox.setPosition(
-              p2.hurtbox.x + p2.direction.x * 0.02*game_width,
-              p2.hurtbox.y + p2.direction.y * 0.05*game_height
-          )
-      }
+      // if (p2.hitbox !== null) {
+      //     p2.hitbox.setPosition(
+      //         p2.hurtbox.x + p2.direction.x * 0.02*game_width,
+      //         p2.hurtbox.y + p2.direction.y * 0.05*game_height
+      //     )
+      // }
 
       // Sprites update
-      p1.updateSprite()
-      p2.updateSprite()
+      me.updateSprite()
+      oppo.updateSprite(false)
 
       // Détection de collision manuelle des attaques
-      if (p1.attackStatus == "ACTIVE" && p2.attackStatus != "HITLAG"
-        && Phaser.Geom.Intersects.RectangleToRectangle(p1.hitbox.getBounds(), p2.hurtbox.getBounds())
+      if (me.attackStatus == "ACTIVE" && p2.attackStatus != "HITLAG"
+        && Phaser.Geom.Intersects.RectangleToRectangle(me.hitbox.getBounds(), p2.hurtbox.getBounds())
       ) {
-        p1.hasAttacked = false
-        applyKnockback(this, p2, p1)
+        me.hasAttacked = false
+        applyKnockback(this, oppo, me)
       }
-      if (p2.attackStatus == "ACTIVE" && p1.attackStatus != "HITLAG"
-        && Phaser.Geom.Intersects.RectangleToRectangle(p2.hitbox.getBounds(), p1.hurtbox.getBounds())
-      ) {
-        p2.hasAttacked = false
-        applyKnockback(this, p1, p2)
-      }
+      // if (p2.attackStatus == "ACTIVE" && p1.attackStatus != "HITLAG"
+      //   && Phaser.Geom.Intersects.RectangleToRectangle(p2.hitbox.getBounds(), p1.hurtbox.getBounds())
+      // ) {
+      //   p2.hasAttacked = false
+      //   applyKnockback(this, p1, p2)
+      // }
 
       // Reset si tombe
-      if (isDead(p1) || isDead(p2)) {
-        if (isDead(p1)) setScore(sc => [sc[0], sc[1] + 1])
-        if (isDead(p2)) setScore(sc => [sc[0] + 1, sc[1]])
-        p1.hurtbox.setPosition(0.5*game_width - 0.1*game_width, 0.45*game_height)
-        p1.resetStats()
-        p2.hurtbox.setPosition(0.5*game_width + 0.1*game_width, 0.45*game_height)
-        p2.resetStats()
+      // if (isDead(p1) || isDead(p2)) {
+      if (isDead(me)) {
+        if (myPlayer === 1) setScore(sc => [sc[0], sc[1] + 1])
+        if (myPlayer === 2) setScore(sc => [sc[0] + 1, sc[1]])
+        const offset = (2*myPlayer-3) * 0.1*game_width
+        me.hurtbox.setPosition(0.5*game_width + offset, 0.45*game_height)
+        me.resetStats()
+        oppo.hurtbox.setPosition(0.5*game_width - offset, 0.45*game_height)
+        oppo.resetStats()
       }
+
+      // emit my state to server
+      socketRef.current.emit('playerState', { matchId: matchId, state: {
+        x: me.hurtbox.x / game_width,
+        y: me.hurtbox.y / game_height,
+        vx: me.hurtbox.body.velocity.x / game_width,
+        vy: me.hurtbox.body.velocity.y / game_height,
+        attackStatus: me.attackStatus,
+        hitboxX: me.hitbox ? me.hitbox.x : null,
+        hitboxY: me.hitbox ? me.hitbox.y : null,
+        hitboxActive: me.hitbox ? true : false,
+        direction: me.direction,
+        anim: me.anim
+      }})
     }
 
     function isDead(player) {

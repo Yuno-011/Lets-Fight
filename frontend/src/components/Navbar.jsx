@@ -21,31 +21,7 @@ function Logo() {
   )
 }
 
-function ActiveMatchesBadge({ count }) {
-  return (
-    <div style={{ padding: "16px 16px 8px" }}>
-      <div style={{
-        display: "flex", alignItems: "center", gap: "10px",
-        background: COLORS.cyanDim, border: `1px solid ${COLORS.cyanBorder}`,
-        borderRadius: "10px", padding: "10px 14px",
-      }}>
-        <span style={{
-          background: "linear-gradient(135deg, #00d4ff, #0099cc)",
-          color: "white", fontWeight: 900, fontSize: "15px",
-          width: 26, height: 26, borderRadius: "6px",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 0 12px rgba(0,212,255,0.5)",
-        }}>
-          {count}
-        </span>
-        <span style={{ color: "rgba(200,220,255,0.8)", fontSize: "13px", fontWeight: 600 }}>
-          Active Matches
-        </span>
-      </div>
-    </div>
-  )
-}
-
+const MY_ACTIVE_MATCH = `query { myActiveMatch { id status } }`
 const FIND_MATCH = `mutation { findMatch { id status } }`
 const LEAVE_QUEUE = `mutation { leaveQueue }`
 
@@ -64,6 +40,17 @@ function FindMatchButton({ onNavigate }) {
     return () => clearInterval(i)
   }, [finding])
 
+  // check if active match
+  useEffect(() => {
+    if (!user) return
+    gqlFetch(MY_ACTIVE_MATCH)
+      .then(data => {
+        if (data.myActiveMatch) setActiveMatchId(data.myActiveMatch.id)
+      })
+      .catch(console.error)
+  }, [user])
+
+  // on find match
   useEffect(() => {
     if (!finding) return
     const interval = setInterval(async () => {
@@ -107,8 +94,8 @@ function FindMatchButton({ onNavigate }) {
         style={{
           width: "100%", padding: "12px",
           background: (finding || activeMatchId)
-            ? `linear-gradient(135deg, ${COLORS.pinkDim}, rgba(176,106,255,0.2))`
-            : `linear-gradient(135deg, ${COLORS.pink}, #c0196e)`,
+            ? `${COLORS.pinkDim}`
+            : `${COLORS.pink}`,
           border: (finding || activeMatchId) ? `1px solid rgba(255,60,157,0.5)` : "none",
           borderRadius: "12px", color: "white", fontWeight: 700,
           fontSize: "14px", cursor: "pointer", letterSpacing: "0.5px",
@@ -126,7 +113,7 @@ function FindMatchButton({ onNavigate }) {
   )
 }
 
-function NavLinks({ activePage, onNavigate }) {
+function NavLinks({ activePage, onNavigate, connected }) {
   return (
     <div style={{ flex: 1, padding: "12px 12px 0", display: "flex", flexDirection: "column", gap: "2px" }}>
       {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
@@ -136,7 +123,7 @@ function NavLinks({ activePage, onNavigate }) {
             key={id}
             onClick={() => onNavigate(`/${id}`)}
             style={{
-              width: "100%", display: "flex", alignItems: "center", gap: "12px",
+              width: "100%", alignItems: "center", gap: "12px",
               padding: "11px 14px", borderRadius: "10px", border: "none", cursor: "pointer",
               background: active ? "rgba(0,212,255,0.12)" : "transparent",
               color: active ? COLORS.cyan : COLORS.textMuted,
@@ -144,6 +131,7 @@ function NavLinks({ activePage, onNavigate }) {
               transition: "all 0.15s",
               textAlign: "left",
               borderLeft: active ? `2px solid ${COLORS.cyan}` : "2px solid transparent",
+              display: (id!=='profile' || connected) ? 'flex' : 'none'
             }}
           >
             <Icon />
@@ -193,9 +181,8 @@ export default function Navbar() {
       boxShadow: "4px 0 30px rgba(0,0,0,0.3)",
     }}>
       <Logo />
-      <ActiveMatchesBadge count={7} />
       <FindMatchButton onNavigate={navigate} />
-      <NavLinks activePage={activePage} onNavigate={navigate} />
+      <NavLinks activePage={activePage} onNavigate={navigate} connected={user!==null} />
       {!user && <SignIn onNavigate={navigate} />}
     </nav>
   )

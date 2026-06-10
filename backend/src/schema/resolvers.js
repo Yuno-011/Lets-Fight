@@ -41,6 +41,14 @@ export const resolvers = {
         throw new Error('NOT_AUTHORIZED')
       return match
     },
+
+    myActiveMatch: async (_, __, { user }) => {
+      if (!user) return null
+      return Match.findOne({
+        $or: [{ player_one: user.id }, { player_two: user.id }],
+        status: 'IN_PROGRESS'
+      }).populate('player_one player_two')
+    },
   },
 
   Mutation: {

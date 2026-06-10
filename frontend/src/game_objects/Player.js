@@ -1,5 +1,5 @@
 export default class Player {
-    constructor(scene, x, y, w, h, color, keys, scaleX, scaleY) {
+    constructor(scene, x, y, w, h, color, scaleX, scaleY) {
         this.hurtbox = scene.add.rectangle(x, y, w, h, color)
         scene.physics.add.existing(this.hurtbox)
         this.hurtbox.setAlpha(0)
@@ -16,7 +16,6 @@ export default class Player {
         this.scaleY = scaleY
         this.currentCombo = 0
         this.lastHitTime = 0
-        this.keys = keys
         this.direction = { x: 0, y: 0 }
         this.hitbox = null
         this.isAttacking = false
@@ -25,9 +24,10 @@ export default class Player {
         this.hasAttacked = false
         this.scene = scene
         this.trailTimer = null
+        this.anim = 'idle'
     }
 
-    updateSprite() {
+    updateSprite(playAnim=true) {
         // Follow the hurtbox
         this.sprite.setPosition(this.hurtbox.x, this.hurtbox.y-15*this.scaleY)
 
@@ -41,22 +41,29 @@ export default class Player {
         }
 
         // Animate based on state
-        if (this.isInHitstun) {
-            this.stopTrail()
-            this.sprite.play('hurt', true)
-        } else if (this.isAttacking) {
-            this.startTrail()
-            this.sprite.play('dash', true)
-        } else if (!this.hurtbox.body.touching.down) {
-            this.stopTrail()
-            this.sprite.play('jump', true)
-        } else if (this.keys.left.isDown || this.keys.right.isDown) {
-            this.stopTrail()
-            this.sprite.play('run', true)
-        } else {
-            this.stopTrail()
-            this.sprite.play('idle', true)
+        if (playAnim) {
+            if (this.isInHitstun) {
+                this.stopTrail()
+                this.setAnim('hurt')
+            } else if (this.isAttacking) {
+                this.startTrail()
+                this.setAnim('dash')
+            } else if (!this.hurtbox.body.touching.down) {
+                this.stopTrail()
+                this.setAnim('jump')
+            } else if (this.hurtbox.body.velocity.x != 0) {
+                this.stopTrail()
+                this.setAnim('run')
+            } else {
+                this.stopTrail()
+                this.setAnim('idle')
+            }
         }
+    }
+
+    setAnim(key) {
+        this.anim = key
+        this.sprite.play(key, true)
     }
 
     canAct() {

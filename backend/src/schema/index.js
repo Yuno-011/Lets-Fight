@@ -53,6 +53,7 @@ const typeDefs = `
     rankings(period: Period!): [User!]!
     globalStats: GlobalStats!
     match(id: ID!): Match
+    myActiveMatch: Match
   }
 
   type Mutation {

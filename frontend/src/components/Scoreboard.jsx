@@ -8,7 +8,7 @@ function PlayerCard({ name, color }) {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
       <div style={{
         width: 64, height: 64, borderRadius: "50%",
-        background: `linear-gradient(135deg, ${color}, ${color}44)`,
+        background: `${color}`,
         border: `2px solid ${color}99`,
         boxShadow: `0 0 20px ${color}66`,
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -66,7 +66,7 @@ function MatchStatus({ status, timer }) {
 export default function Scoreboard({ score, timer, playerOne, playerTwo, status }) {
   return (
     <div style={{
-      background: "linear-gradient(135deg, rgba(15,28,60,0.95) 0%, rgba(20,40,80,0.9) 100%)",
+      background: "rgba(15,28,60,0.95)",
       border: `1px solid ${COLORS.cyanBorder}`,
       borderRadius: "16px",
       padding: "12px 16px",

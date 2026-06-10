@@ -62,19 +62,6 @@ export default function GamePage() {
     const [opponentDisconnected, setOpponentDisconnected] = useState(false)
     const [ready, setReady] = useState(false)
 
-    const renderCount = useRef(0)
-    renderCount.current++
-    console.log('GamePage render #', renderCount.current)
-
-    const prevState = useRef({})
-    const state = { matchPhase, myPlayer, score, timer, players, opponentDisconnected, ready }
-    Object.keys(state).forEach(key => {
-        if (prevState.current[key] !== state[key]) {
-            console.log('changed:', key, prevState.current[key], '→', state[key])
-        }
-    })
-    prevState.current = state
-
     // Game Socket
     useEffect(() => {
         const socket = io(import.meta.env.VITE_API_URL)

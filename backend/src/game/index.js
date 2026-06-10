@@ -79,8 +79,8 @@ export function initSocket(httpServer) {
 
 
         // Player sends their state — relay to the other player only
-        socket.on('gameState', ({ matchId, state }) => {
-            socket.broadcast.to(matchId).emit('gameState', state)
+        socket.on('playerState', ({ matchId, state }) => {
+            socket.broadcast.to(matchId).emit('opponentState', state)
         })
 
         // Player sends an attack — relay to the other player only
