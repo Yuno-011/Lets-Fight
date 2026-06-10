@@ -9,6 +9,8 @@ import { GuestRoute, ProtectedRoute } from "./guards/ProtectedRoute"
 import ProfilePage from "./pages/ProfilePage"
 import RankingPage from "./pages/RankingPage"
 import { useIsMobile } from "./hooks/useIsMobile"
+import AboutPage from "./pages/AboutPage"
+import StatsPage from "./pages/StatsPage"
 
 export default function App() {
   const isMobile = useIsMobile()
@@ -30,8 +32,8 @@ export default function App() {
           <Route path="/home" element={<HomePage />} />
           <Route path="/match/:id" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
           <Route path="/ranking" element={<RankingPage />} />
-          <Route path="/stats" element={<PlaceholderPage page="stats" />} />
-          <Route path="/about" element={<PlaceholderPage page="about" />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/auth" element={<GuestRoute><AuthPage /></GuestRoute>} />
           <Route path="/user/:username" element={<PlaceholderPage page="user" />} />

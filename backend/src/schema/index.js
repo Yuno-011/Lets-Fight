@@ -41,11 +41,25 @@ const typeDefs = `
     stats: UserStats!
   }
 
+  type EloRange {
+    min: Int!
+    max: Int!
+    players: Int!
+  }
+
+  type Grinder {
+    username: String!
+    matches: Int!
+    kos: Int!
+    elo: Int!
+  }
+
   type GlobalStats {
-    best_grinder: User!
-    best_growth: User!
+    best_grinder: Grinder!
     total_matches: Int!
+    total_kos: Int!
     total_players: Int!
+    elo_distribution: [EloRange!]!
   }
 
   type Query {

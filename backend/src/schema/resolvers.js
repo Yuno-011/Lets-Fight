@@ -85,7 +85,64 @@ export const resolvers = {
     },
 
     globalStats: async () => {
-      // TODO
+      // Global Stats
+      const [
+        total_players,
+        total_matches,
+        finishedMatches,
+        allUsers,
+      ] = await Promise.all([
+        User.countDocuments(),
+        Match.countDocuments({ status: 'FINISHED' }),
+        Match.find({ status: 'FINISHED' }).select('score_one score_two player_one player_two'),
+        User.find().select('_id username email created_at elo'),
+      ])
+      const total_kos = finishedMatches.reduce(
+        (sum, m) => sum + m.score_one + m.score_two, 0
+      )
+
+      // Best grinder
+      const matchCounts = {}
+      for (const m of finishedMatches) {
+        const p1 = m.player_one.toString()
+        const p2 = m.player_two.toString()
+        if (matchCounts[p1]) matchCounts[p1] = {matches: matchCounts[p1].matches + 1, kos: matchCounts[p1].kos + m.score_one}
+        else matchCounts[p1] = {matches: 1, kos: m.score_one}
+        if (matchCounts[p2]) matchCounts[p2] = {matches: matchCounts[p2].matches + 1, kos: matchCounts[p2].kos + m.score_two}
+        else matchCounts[p2] = {matches: 1, kos: m.score_two}
+      }
+      const bestGrinderId = Object.entries(matchCounts)
+        .sort(([, a], [, b]) => b.matches - a.matches)[0]?.[0]
+      const grinder = allUsers.find(u => u._id.toString() === bestGrinderId)
+      const best_grinder = {
+        username: grinder.username,
+        matches: matchCounts[bestGrinderId].matches,
+        kos: matchCounts[bestGrinderId].kos,
+        elo: grinder.elo
+      }
+
+      // ELO distribution bands
+      const ELO_BANDS = [
+        { min: 0,    max: 999  },
+        { min: 1000, max: 1199 },
+        { min: 1200, max: 1399 },
+        { min: 1400, max: 1599 },
+        { min: 1600, max: Infinity },
+      ]
+      const usersWithElo = await User.find().select('elo')
+      const elo_distribution = ELO_BANDS.map(({ min, max }) => ({
+        min: min,
+        max: max === Infinity ? 9999 : max,
+        players: usersWithElo.filter(u => u.elo >= min && u.elo <= max).length,
+      }))
+      
+      return {
+        best_grinder,
+        total_matches,
+        total_kos,
+        total_players,
+        elo_distribution,
+      }
     },
 
     match: async (_, { id }, { user }) => {
@@ -221,14 +278,6 @@ export const resolvers = {
       await User.findByIdAndUpdate(loser._id, { $inc: { elo: loserDelta } })
 
       return match
-    },
-
-    updateUsername: async (_, { username }) => {
-      // TODO
-    },
-
-    updatePassword: async (_, { old, new: newPassword }) => {
-      // TODO
     },
   },
   
